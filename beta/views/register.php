@@ -6,7 +6,7 @@
 </div>
 <?php endif;?>
 
-<?php echo form_open('beta/register/'.$this->uri->segment(3), array('id' => 'register')); ?>
+<?php echo form_open('beta/register/'.$this->uri->segment(3), array('id' => 'beta_register')); ?>
 
 <ul>
 	<li>

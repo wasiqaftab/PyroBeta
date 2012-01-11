@@ -26,6 +26,74 @@ class Beta extends Public_Controller
 	// --------------------------------------------------------------------------
 
 	/**
+	 * Beta Signup
+	 *
+	 * Once a user is approved or is invited to a
+	 * beta, they can register using this function.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function signup()
+	{
+		// Can't be logged in and sign up for the beta.
+		if(isset($this->current_user->id)):
+		
+			$this->session->set_flashdata('notice', lang('beta:cannot_signup_logged_in'));
+			redirect();
+	
+		endif;
+	
+		$this->load->library('Form_validation');
+	
+		$this->form_validation->set_rules($this->beta_user_m->validation);
+
+		if( $this->form_validation->run() ):
+		
+			if( $this->beta_user_m->queue_user($this->input->post('email')) ):
+				
+				redirect('beta/complete');
+			
+			else:
+			
+				// Add to validation errors
+			
+			endif;
+		
+		endif;
+		
+		foreach($this->beta_user_m->validation as $rule):
+
+			$this->data->{$rule['field']} = $this->input->post($rule['field']);
+		
+		endforeach;
+
+		$this->template->error_string = $this->form_validation->error_string();
+
+		$this->template->title($this->module_details['name'], lang('beta:sign_up'))
+					   ->build('signup', $this->data);
+	}
+
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Beta Signup
+	 *
+	 * Once a user is approved or is invited to a
+	 * beta, they can register using this function.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function complete()
+	{
+		$this->template->title($this->module_details['name'], lang('beta:thank_you'))
+					   ->build('signup_complete', $this->data);
+	}
+
+	// --------------------------------------------------------------------------
+
+	/**
 	 * Beta Register
 	 *
 	 * Once a user is approved or is invited to a
@@ -100,7 +168,8 @@ class Beta extends Public_Controller
 				$username = $this->input->post('username');
 			
 			endif;
-
+						
+			// Register our user and auto-activate him.
 			$id = $this->ion_auth->register($username, $password, $email, array(
 				'first_name'		=> $this->input->post('first_name'),
 				'last_name'			=> $this->input->post('last_name'),
@@ -109,32 +178,8 @@ class Beta extends Public_Controller
 
 			// Try to create the user
 			if ($id > 0):
-			
-				$user					= new stdClass();
-				$user->first_name 		= $this->input->post('first_name');
-				$user->last_name		= $this->input->post('last_name');
-				$user->username			= $username;
-				$user->display_name		= $username;
-				$user->email			= $email;
-				$user->password 		= $password;
 
 				Events::trigger('post_user_register', $id);
-
-				// Send the internal registered email if applicable
-				if (Settings::get('registered_email')):
-				
-					$this->load->library('user_agent');
-
-					Events::trigger('email', array(
-						'name' => $user->first_name.' '.$user->last_name,
-						'sender_ip' => $this->input->ip_address(),
-						'sender_agent' => $this->agent->browser() . ' ' . $this->agent->version(),
-						'sender_os' => $this->agent->platform(),
-						'slug' => 'registered',
-						'email' => Settings::get('contact_email'),
-					), 'array');
-				
-				endif;
 				
 				// Set a converted
 				$convert_data = array(

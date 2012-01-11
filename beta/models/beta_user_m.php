@@ -99,7 +99,7 @@ class Beta_user_m extends MY_Model {
 	{
 		$hash = md5(sha1(time()));
 		
-		$obj = $this->db->where('hash', $hash)->get('beta_users');
+		$obj = $this->db->where('hash', $hash)->get($this->_table);
 		
 		if($obj->num_rows() == 0):
 		
@@ -110,6 +110,29 @@ class Beta_user_m extends MY_Model {
 			return $this->create_hash();
 		
 		endif;
+	}
+
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Queue user for beta
+	 *
+	 * @access	public
+	 * @param	string - email address
+	 * @return	bool
+	 */
+	public function queue_user($email)
+	{
+		$user = array(
+			'email'			=> $email,
+			'type'			=> 'signup',
+			'created'		=> time(),
+			'status'		=> 'p',
+			'converted'		=> 'n',
+			'hash'			=> $this->create_hash()
+		);
+		
+		return $this->db->insert($this->_table, $user);
 	}
 
 	// --------------------------------------------------------------------------
